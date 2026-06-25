@@ -401,6 +401,47 @@ body {
   color: var(--color-text-faint);
 }
 
+/* ===== ปุ่มปรับขนาดกว้าง/สูงของกล่อง ===== */
+.box-resize-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.resize-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.resize-label {
+  font-size: 11px;
+  color: var(--color-text-faint);
+  margin-right: 2px;
+}
+
+.resize-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.resize-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+  background: var(--color-accent-soft);
+}
+
 /* ===== Import modal ===== */
 .import-modal-overlay {
   position: fixed;
@@ -602,6 +643,7 @@ body {
 /* ===== Preview grid (เรนเดอร์เทมเพลตจริง) ===== */
 .preview-grid {
   display: grid;
+  grid-auto-flow: row dense;
   gap: 12px;
 }
 
