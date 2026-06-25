@@ -204,6 +204,23 @@ body {
 .preview-hint {
   font-size: 12px;
   color: var(--color-text-faint);
+  flex: 1;
+}
+
+.export-btn {
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-coral);
+  color: white;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.export-btn:hover {
+  background: #d24a3b;
 }
 
 .preview-canvas {
