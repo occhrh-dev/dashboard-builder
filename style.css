@@ -1,14 +1,19 @@
 :root {
-  --color-bg: #f5f6f8;
+  --color-bg: #FBF7EE;
   --color-surface: #ffffff;
-  --color-border: #e1e4e9;
-  --color-border-strong: #c7cbd3;
-  --color-text: #1f2329;
-  --color-text-muted: #6b7280;
-  --color-text-faint: #9aa1ad;
-  --color-accent: #2563eb;
-  --color-accent-soft: #eaf0fe;
-  --color-accent-text: #1d4ed8;
+  --color-border: #E5DCC8;
+  --color-border-strong: #D4C7A8;
+  --color-text: #1F2937;
+  --color-text-muted: #6b6356;
+  --color-text-faint: #a39a87;
+  --color-accent: #0E7C7B;
+  --color-accent-soft: #E3F1F0;
+  --color-accent-text: #0a5f5e;
+  --color-marigold: #F2A93B;
+  --color-marigold-soft: #FDF1DD;
+  --color-coral: #E85D4E;
+  --color-coral-soft: #FBE9E6;
+  --color-sky: #7FC6D9;
   --color-success: #16a34a;
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -35,6 +40,8 @@ body {
 .step-bar {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
+  border-top: 3px solid transparent;
+  border-image: linear-gradient(90deg, var(--color-accent), var(--color-marigold), var(--color-coral)) 1;
   padding: 0 24px;
 }
 
@@ -58,7 +65,7 @@ body {
 }
 
 .step.done {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .step-num {
@@ -81,7 +88,7 @@ body {
 }
 
 .step.done .step-num {
-  background: var(--color-success);
+  background: var(--color-marigold);
   color: white;
 }
 
@@ -140,8 +147,8 @@ body {
 }
 
 .template-card.selected {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  border-color: var(--color-coral);
+  box-shadow: 0 0 0 3px var(--color-coral-soft);
 }
 
 .template-thumb {
@@ -155,6 +162,11 @@ body {
   background: var(--color-accent-soft);
   border-radius: 4px;
 }
+
+.thumb-box:nth-child(2) { background: var(--color-marigold-soft); }
+.thumb-box:nth-child(3) { background: var(--color-coral-soft); }
+.thumb-box:nth-child(4) { background: var(--color-accent-soft); }
+.thumb-box:nth-child(5) { background: var(--color-marigold-soft); }
 
 .template-name {
   font-size: 14px;
@@ -257,17 +269,17 @@ body {
 
 .preview-tab-add {
   background: none;
-  border: 1px dashed var(--color-border-strong);
+  border: 1.5px dashed var(--color-marigold);
   border-radius: var(--radius-sm);
   padding: 6px 12px;
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: #b9791f;
   cursor: pointer;
+  font-weight: 500;
 }
 
 .preview-tab-add:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent-text);
+  background: var(--color-marigold-soft);
 }
 
 /* ===== Box controls (dropdown ชนิดกราฟ + ปุ่มลบ) ===== */
@@ -344,6 +356,49 @@ body {
 .box-import-btn:hover {
   border-color: var(--color-accent);
   color: var(--color-accent-text);
+}
+
+/* ===== Color picker ของกล่องกราฟ ===== */
+.box-color-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.color-swatch-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.color-swatch-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  background: none;
+  overflow: hidden;
+}
+
+.color-swatch-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-swatch-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
+}
+
+.color-swatch-label {
+  font-size: 11px;
+  color: var(--color-text-faint);
 }
 
 /* ===== Import modal ===== */
@@ -551,14 +606,21 @@ body {
 }
 
 .preview-box {
-  background: var(--color-bg);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-accent);
   border-radius: var(--radius-md);
   padding: 14px;
   min-height: 90px;
   display: flex;
   flex-direction: column;
 }
+
+.preview-grid > .preview-box:nth-child(2) { border-left-color: var(--color-marigold); }
+.preview-grid > .preview-box:nth-child(3) { border-left-color: var(--color-coral); }
+.preview-grid > .preview-box:nth-child(4) { border-left-color: var(--color-sky); }
+.preview-grid > .preview-box:nth-child(5) { border-left-color: var(--color-accent); }
+.preview-grid > .preview-box:nth-child(6) { border-left-color: var(--color-marigold); }
 
 .preview-box-label {
   font-size: 12px;
@@ -569,6 +631,7 @@ body {
 .preview-box-value {
   font-size: 26px;
   font-weight: 600;
+  color: var(--color-text);
   margin: 0;
 }
 
