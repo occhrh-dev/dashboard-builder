@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Builder</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ===== Step indicator ===== -->
+  <header class="step-bar">
+    <div class="step-bar-inner">
+      <div class="step done" data-step="1">
+        <span class="step-num">1</span>
+        <span class="step-label">นำเข้าข้อมูล</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step active" data-step="2">
+        <span class="step-num">2</span>
+        <span class="step-label">เลือกรูปแบบหน้า</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" data-step="3">
+        <span class="step-num">3</span>
+        <span class="step-label">สร้างกราฟ</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" data-step="4">
+        <span class="step-num">4</span>
+        <span class="step-label">เสร็จแล้ว</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-area">
+
+    <!-- ===== STEP 1: Import data (placeholder, ทำต่อภายหลัง) ===== -->
+    <section class="step-panel" id="panel-1" hidden>
+      <h1 class="panel-title">นำเข้าข้อมูล</h1>
+      <p class="panel-desc">ส่วนนี้จะทำในขั้นถัดไป — ตอนนี้ใช้ข้อมูลตัวอย่างไปก่อน</p>
+    </section>
+
+    <!-- ===== STEP 2: เลือกรูปแบบหน้า (Layout templates) ===== -->
+    <section class="step-panel" id="panel-2">
+      <h1 class="panel-title">เลือกรูปแบบหน้าแดชบอร์ด</h1>
+      <p class="panel-desc">เลือกโครงที่ใกล้เคียงกับที่ต้องการ ปรับรายละเอียดได้ในขั้นถัดไป</p>
+
+      <div class="template-grid" id="templateGrid">
+        <!-- รายการเทมเพลตถูกสร้างจาก templates.js -->
+      </div>
+    </section>
+
+    <!-- ===== STEP 3: สร้างกราฟ (placeholder) ===== -->
+    <section class="step-panel" id="panel-3" hidden>
+      <h1 class="panel-title">สร้างกราฟ</h1>
+      <p class="panel-desc">ส่วนนี้จะทำในขั้นถัดไป</p>
+    </section>
+
+    <!-- ===== STEP 4: เสร็จแล้ว (placeholder) ===== -->
+    <section class="step-panel" id="panel-4" hidden>
+      <h1 class="panel-title">แดชบอร์ดของคุณ</h1>
+      <p class="panel-desc">ส่วนนี้จะทำในขั้นถัดไป</p>
+    </section>
+
+  </main>
+
+  <!-- ===== Preview area: แสดงตัวอย่างเทมเพลตที่เลือก พร้อมข้อมูลตัวอย่าง ===== -->
+  <section class="preview-area" id="previewArea">
+    <div class="preview-header">
+      <h2 class="preview-title">ตัวอย่างหน้าแดชบอร์ด</h2>
+      <span class="preview-hint">ข้อมูลที่เห็นเป็นข้อมูลตัวอย่างสำหรับสาธิต</span>
+    </div>
+    <div class="preview-canvas" id="previewCanvas">
+      <!-- เรนเดอร์เทมเพลตที่เลือก ผ่าน app.js -->
+      <p class="preview-empty">เลือกรูปแบบหน้าด้านบนเพื่อดูตัวอย่าง</p>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="templates.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
