@@ -27,6 +27,10 @@ const CHART_TYPE_OPTIONS = [
   { value: "pie", label: "กราฟวงกลม" }
 ];
 
+// สีเริ่มต้นของกราฟ (โทนราชการ: เขียวอมฟ้า, เหลืองดาวเรือง, ส้มแดง, ฟ้าอ่อน, ...)
+const DEFAULT_CHART_COLOR = "#0E7C7B";
+const DEFAULT_PIE_COLORS = ["#0E7C7B", "#F2A93B", "#E85D4E", "#7FC6D9", "#B07BAC"];
+
 // ---------- สร้างแท็บแรกจากเทมเพลตที่เลือก ----------
 function createTabFromTemplate(template, tabName) {
   const boxes = template.boxes.map(b => ({
@@ -38,7 +42,8 @@ function createTabFromTemplate(template, tabName) {
     value: b.value,
     unit: b.unit,
     labels: b.labels,
-    data: b.data
+    data: b.data,
+    color: b.type === "pie" ? DEFAULT_PIE_COLORS.slice() : (b.type !== "stat" ? DEFAULT_CHART_COLOR : undefined)
   }));
 
   return {
@@ -250,6 +255,10 @@ function renderBoxElement(tab, box) {
   controls.appendChild(removeBoxBtn);
   boxEl.appendChild(controls);
 
+  if (box.type !== "stat") {
+    boxEl.appendChild(renderColorPickerRow(tab, box));
+  }
+
   const importBtn = document.createElement("button");
   importBtn.className = "box-import-btn";
   importBtn.textContent = box.sourceInfo ? "เปลี่ยนข้อมูล" : "นำเข้าข้อมูล";
@@ -294,6 +303,10 @@ function changeBoxType(tabId, boxId, newType) {
     box.value = "0";
     box.unit = "";
   }
+  // ตั้งสีเริ่มต้นให้กราฟ ถ้ายังไม่มีการตั้งสีมาก่อน
+  if (newType !== "stat" && !box.color) {
+    box.color = newType === "pie" ? DEFAULT_PIE_COLORS.slice() : DEFAULT_CHART_COLOR;
+  }
 
   renderActiveTab();
 }
@@ -326,10 +339,82 @@ function removeBoxFromTab(tabId, boxId) {
   renderActiveTab();
 }
 
+// ---------- สร้างแถว color picker สำหรับกล่องกราฟ (bar/line: สีเดียว, pie: หลายสีตามจำนวนหมวด) ----------
+function renderColorPickerRow(tab, box) {
+  const row = document.createElement("div");
+  row.className = "box-color-row";
+
+  if (box.type === "pie") {
+    const labels = box.labels || [];
+    // ให้แน่ใจว่า color array มีจำนวนพอกับ labels เสมอ (เผื่อข้อมูลใหม่มีหมวดมากกว่าเดิม)
+    if (!Array.isArray(box.color)) box.color = DEFAULT_PIE_COLORS.slice();
+    while (box.color.length < labels.length) {
+      box.color.push(DEFAULT_PIE_COLORS[box.color.length % DEFAULT_PIE_COLORS.length]);
+    }
+
+    labels.forEach((label, idx) => {
+      const swatchWrap = document.createElement("label");
+      swatchWrap.className = "color-swatch-wrap";
+      swatchWrap.title = label;
+
+      const swatchInput = document.createElement("input");
+      swatchInput.type = "color";
+      swatchInput.className = "color-swatch-input";
+      swatchInput.value = box.color[idx] || DEFAULT_PIE_COLORS[idx % DEFAULT_PIE_COLORS.length];
+      swatchInput.addEventListener("input", (e) => {
+        box.color[idx] = e.target.value;
+        redrawSingleChart(box);
+      });
+
+      swatchWrap.appendChild(swatchInput);
+      row.appendChild(swatchWrap);
+    });
+  } else {
+    if (!box.color || Array.isArray(box.color)) box.color = DEFAULT_CHART_COLOR;
+
+    const swatchWrap = document.createElement("label");
+    swatchWrap.className = "color-swatch-wrap";
+    swatchWrap.title = "เลือกสีกราฟ";
+
+    const swatchInput = document.createElement("input");
+    swatchInput.type = "color";
+    swatchInput.className = "color-swatch-input";
+    swatchInput.value = box.color;
+    swatchInput.addEventListener("input", (e) => {
+      box.color = e.target.value;
+      redrawSingleChart(box);
+    });
+
+    const swatchLabel = document.createElement("span");
+    swatchLabel.className = "color-swatch-label";
+    swatchLabel.textContent = "สีกราฟ";
+
+    swatchWrap.appendChild(swatchInput);
+    row.appendChild(swatchWrap);
+    row.appendChild(swatchLabel);
+  }
+
+  return row;
+}
+
+// ---------- วาดกราฟใหม่เฉพาะกล่องเดียว (ใช้ตอนเปลี่ยนสี ไม่ต้อง re-render กล่องอื่นทั้งหมด) ----------
+function redrawSingleChart(box) {
+  const existingIndex = appState.chartInstances.findIndex(c => c.canvas && c.canvas.id === "chart-" + box.id);
+  if (existingIndex !== -1) {
+    appState.chartInstances[existingIndex].destroy();
+    appState.chartInstances.splice(existingIndex, 1);
+  }
+  drawChartForBox(box);
+}
+
 // ---------- วาดกราฟ Chart.js ให้กล่องเดียว ----------
 function drawChartForBox(box) {
   const ctx = document.getElementById("chart-" + box.id);
   if (!ctx) return;
+
+  const mainColor = box.type === "pie"
+    ? (Array.isArray(box.color) ? box.color : DEFAULT_PIE_COLORS)
+    : (typeof box.color === "string" ? box.color : DEFAULT_CHART_COLOR);
 
   const chart = new Chart(ctx, {
     type: box.type,
@@ -337,11 +422,9 @@ function drawChartForBox(box) {
       labels: box.labels,
       datasets: [{
         data: box.data,
-        backgroundColor: box.type === "pie"
-          ? ["#2563eb", "#60a5fa", "#bfdbfe", "#1d4ed8", "#93c5fd"]
-          : "#2563eb",
-        borderColor: "#2563eb",
-        borderWidth: box.type === "line" ? 2 : 0,
+        backgroundColor: mainColor,
+        borderColor: box.type === "pie" ? "#ffffff" : mainColor,
+        borderWidth: box.type === "line" ? 2 : (box.type === "pie" ? 2 : 0),
         borderRadius: box.type === "bar" ? 4 : 0,
         tension: 0.3,
         fill: box.type === "line" ? false : true
