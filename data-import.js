@@ -5,22 +5,26 @@
 const importState = {
   targetTabId: null,
   targetBoxId: null,
+  mode: "file",           // "file" หรือ "link"
   workbook: null,        // SheetJS workbook object
   sheetNames: [],
   selectedSheet: null,
   columns: [],            // ชื่อคอลัมน์จากหัวตาราง (แถวแรก)
-  rows: []                // ข้อมูลทั้งหมดของชีตที่เลือก (array of objects)
+  rows: [],               // ข้อมูลทั้งหมดของชีตที่เลือก (array of objects)
+  isLoading: false
 };
 
 // ---------- เปิด modal นำเข้าข้อมูลสำหรับกล่องใดกล่องหนึ่ง ----------
 function openImportModal(tabId, boxId) {
   importState.targetTabId = tabId;
   importState.targetBoxId = boxId;
+  importState.mode = "file";
   importState.workbook = null;
   importState.sheetNames = [];
   importState.selectedSheet = null;
   importState.columns = [];
   importState.rows = [];
+  importState.isLoading = false;
 
   renderImportModal();
   document.getElementById("importModalOverlay").style.display = "flex";
@@ -29,6 +33,54 @@ function openImportModal(tabId, boxId) {
 // ---------- ปิด modal ----------
 function closeImportModal() {
   document.getElementById("importModalOverlay").style.display = "none";
+}
+
+// ---------- แปลงลิงก์ Google Sheet ทั่วไป ให้เป็น URL export CSV ----------
+// รองรับลิงก์รูปแบบ: https://docs.google.com/spreadsheets/d/{ID}/edit#gid=0
+function convertGoogleSheetUrlToCsv(inputUrl) {
+  const match = inputUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (!match) return null;
+
+  const sheetId = match[1];
+  const gidMatch = inputUrl.match(/[#&]gid=([0-9]+)/);
+  const gid = gidMatch ? gidMatch[1] : "0";
+
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+}
+
+// ---------- ดึงข้อมูลจากลิงก์ Google Sheet ----------
+function handleLinkSubmit(inputUrl) {
+  const csvUrl = convertGoogleSheetUrlToCsv(inputUrl.trim());
+
+  if (!csvUrl) {
+    showImportError("ลิงก์ไม่ถูกต้อง — กรุณาคัดลอกลิงก์จาก URL ของ Google Sheet ที่เปิดอยู่ในเบราว์เซอร์");
+    return;
+  }
+
+  importState.isLoading = true;
+  renderImportModal();
+
+  fetch(csvUrl)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("fetch failed: " + response.status);
+      }
+      return response.text();
+    })
+    .then(csvText => {
+      const workbook = XLSX.read(csvText, { type: "string" });
+      importState.workbook = workbook;
+      importState.sheetNames = workbook.SheetNames;
+      importState.selectedSheet = workbook.SheetNames[0];
+      importState.isLoading = false;
+      loadSheetData(importState.selectedSheet);
+      renderImportModal();
+    })
+    .catch(() => {
+      importState.isLoading = false;
+      renderImportModal();
+      showImportError("ดึงข้อมูลไม่สำเร็จ — กรุณาตรวจสอบว่า Google Sheet ตั้งค่าแชร์เป็น \"ทุกคนที่มีลิงก์ดูได้\" แล้ว และลิงก์ถูกต้อง");
+    });
 }
 
 // ---------- อ่านไฟล์ที่ผู้ใช้เลือก ----------
@@ -142,24 +194,40 @@ function renderImportModal() {
   const body = document.getElementById("importModalBody");
   body.innerHTML = "";
 
-  // ----- ขั้นที่ 1: เลือกไฟล์ -----
-  const fileSection = document.createElement("div");
-  fileSection.className = "import-section";
-  const fileLabel = document.createElement("label");
-  fileLabel.className = "import-label";
-  fileLabel.textContent = "1. เลือกไฟล์ (.xlsx, .xls, .csv)";
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = ".xlsx,.xls,.csv";
-  fileInput.className = "import-file-input";
-  fileInput.addEventListener("change", (e) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFileSelected(e.target.files[0]);
-    }
-  });
-  fileSection.appendChild(fileLabel);
-  fileSection.appendChild(fileInput);
-  body.appendChild(fileSection);
+  // ----- แท็บสลับโหมด: อัปโหลดไฟล์ / วางลิงก์ -----
+  const modeTabs = document.createElement("div");
+  modeTabs.className = "import-mode-tabs";
+
+  const fileTabBtn = document.createElement("button");
+  fileTabBtn.type = "button";
+  fileTabBtn.className = "import-mode-tab" + (importState.mode === "file" ? " active" : "");
+  fileTabBtn.textContent = "อัปโหลดไฟล์";
+  fileTabBtn.addEventListener("click", () => switchImportMode("file"));
+
+  const linkTabBtn = document.createElement("button");
+  linkTabBtn.type = "button";
+  linkTabBtn.className = "import-mode-tab" + (importState.mode === "link" ? " active" : "");
+  linkTabBtn.textContent = "วางลิงก์ Google Sheet";
+  linkTabBtn.addEventListener("click", () => switchImportMode("link"));
+
+  modeTabs.appendChild(fileTabBtn);
+  modeTabs.appendChild(linkTabBtn);
+  body.appendChild(modeTabs);
+
+  if (importState.mode === "file") {
+    renderFileInputSection(body);
+  } else {
+    renderLinkInputSection(body);
+  }
+
+  if (importState.isLoading) {
+    const loadingMsg = document.createElement("p");
+    loadingMsg.className = "import-loading";
+    loadingMsg.textContent = "กำลังดึงข้อมูล...";
+    body.appendChild(loadingMsg);
+    appendImportFooter(body, false);
+    return;
+  }
 
   if (!importState.workbook) {
     appendImportFooter(body, false);
@@ -172,7 +240,7 @@ function renderImportModal() {
     sheetSection.className = "import-section";
     const sheetLabel = document.createElement("label");
     sheetLabel.className = "import-label";
-    sheetLabel.textContent = "2. เลือกชีตที่ต้องการใช้";
+    sheetLabel.textContent = "เลือกชีตที่ต้องการใช้";
     const sheetSelect = document.createElement("select");
     sheetSelect.className = "import-select";
     importState.sheetNames.forEach(name => {
@@ -232,6 +300,100 @@ function renderImportModal() {
   }
 
   appendImportFooter(body, true);
+}
+
+// ---------- สลับโหมด ไฟล์ / ลิงก์ (เคลียร์ข้อมูลเก่าเมื่อสลับ) ----------
+function switchImportMode(mode) {
+  importState.mode = mode;
+  importState.workbook = null;
+  importState.sheetNames = [];
+  importState.selectedSheet = null;
+  importState.columns = [];
+  importState.rows = [];
+  importState.isLoading = false;
+  renderImportModal();
+}
+
+// ---------- ส่วนอัปโหลดไฟล์ ----------
+function renderFileInputSection(body) {
+  const fileSection = document.createElement("div");
+  fileSection.className = "import-section";
+  const fileLabel = document.createElement("label");
+  fileLabel.className = "import-label";
+  fileLabel.textContent = "เลือกไฟล์ (.xlsx, .xls, .csv)";
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".xlsx,.xls,.csv";
+  fileInput.className = "import-file-input";
+  fileInput.addEventListener("change", (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileSelected(e.target.files[0]);
+    }
+  });
+  fileSection.appendChild(fileLabel);
+  fileSection.appendChild(fileInput);
+  body.appendChild(fileSection);
+}
+
+// ---------- ส่วนวางลิงก์ Google Sheet + คำแนะนำตั้งค่าแชร์ ----------
+function renderLinkInputSection(body) {
+  const linkSection = document.createElement("div");
+  linkSection.className = "import-section";
+  const linkLabel = document.createElement("label");
+  linkLabel.className = "import-label";
+  linkLabel.textContent = "วางลิงก์ Google Sheet";
+  const linkInputRow = document.createElement("div");
+  linkInputRow.className = "import-link-row";
+
+  const linkInput = document.createElement("input");
+  linkInput.type = "text";
+  linkInput.className = "import-link-input";
+  linkInput.placeholder = "https://docs.google.com/spreadsheets/d/...";
+
+  const linkSubmitBtn = document.createElement("button");
+  linkSubmitBtn.type = "button";
+  linkSubmitBtn.className = "import-link-submit-btn";
+  linkSubmitBtn.textContent = "ดึงข้อมูล";
+  linkSubmitBtn.addEventListener("click", () => {
+    if (linkInput.value.trim()) handleLinkSubmit(linkInput.value);
+  });
+
+  linkInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (linkInput.value.trim()) handleLinkSubmit(linkInput.value);
+    }
+  });
+
+  linkInputRow.appendChild(linkInput);
+  linkInputRow.appendChild(linkSubmitBtn);
+  linkSection.appendChild(linkLabel);
+  linkSection.appendChild(linkInputRow);
+
+  // คำแนะนำตั้งค่าแชร์ (เผื่อติดปัญหา)
+  const helpDetails = document.createElement("details");
+  helpDetails.className = "import-link-help";
+  const helpSummary = document.createElement("summary");
+  helpSummary.textContent = "ลิงก์ใช้ไม่ได้? ดูวิธีตั้งค่าแชร์ Google Sheet";
+  const helpBody = document.createElement("ol");
+  helpBody.className = "import-link-help-steps";
+  [
+    "เปิด Google Sheet ที่ต้องการ",
+    "กดปุ่ม \"แชร์\" (Share) มุมขวาบน",
+    "มองหา \"การเข้าถึงทั่วไป\" (General access)",
+    "เปลี่ยนจาก \"จำกัด\" เป็น \"ทุกคนที่มีลิงก์\"",
+    "ตั้งสิทธิ์เป็น \"ผู้ดู\" (Viewer) แล้วกด \"เสร็จสิ้น\"",
+    "คัดลอกลิงก์จาก URL bar ของเบราว์เซอร์มาวางในช่องด้านบน"
+  ].forEach(step => {
+    const li = document.createElement("li");
+    li.textContent = step;
+    helpBody.appendChild(li);
+  });
+  helpDetails.appendChild(helpSummary);
+  helpDetails.appendChild(helpBody);
+  linkSection.appendChild(helpDetails);
+
+  body.appendChild(linkSection);
 }
 
 // ---------- ตัวเลือกคอลัมน์สำหรับกล่อง stat: คอลัมน์ตัวเลข + วิธีคำนวณ ----------
@@ -394,4 +556,7 @@ if (typeof window !== "undefined") {
   window.handleFileSelected = handleFileSelected;
   window.handleSheetChange = handleSheetChange;
   window.confirmImport = confirmImport;
+  window.convertGoogleSheetUrlToCsv = convertGoogleSheetUrlToCsv;
+  window.handleLinkSubmit = handleLinkSubmit;
+  window.switchImportMode = switchImportMode;
 }
