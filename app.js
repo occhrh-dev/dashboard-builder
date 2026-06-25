@@ -671,7 +671,23 @@ document.addEventListener("DOMContentLoaded", () => {
   if (DASHBOARD_TEMPLATES.length > 0) {
     addTabFromTemplateId(DASHBOARD_TEMPLATES[0].id);
   }
+
+  document.getElementById("exportBtn").addEventListener("click", handleExportClick);
 });
+
+// ---------- จัดการคลิกปุ่ม Export: สร้างไฟล์ HTML แล้วดาวน์โหลด ----------
+function handleExportClick() {
+  const html = generateExportHTML(appState);
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "แดชบอร์ด.html";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 // expose สำหรับการทดสอบอัตโนมัติเท่านั้น (const top-level ไม่ leak เป็น window property ตาม JS spec)
 if (typeof window !== "undefined") {
