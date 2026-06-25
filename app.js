@@ -36,6 +36,59 @@ function colorAt(idx) {
   return DEFAULT_CHART_PALETTE[idx % DEFAULT_CHART_PALETTE.length];
 }
 
+// ---------- แปลง grid span string (เช่น "1 / 3" หรือ "2" หรือ "auto") เป็น {start, span} ----------
+function parseGridSpan(value) {
+  if (!value || value === "auto") return { start: 1, span: 1 };
+  const parts = String(value).split("/").map(s => s.trim());
+  if (parts.length === 2) {
+    const start = parseInt(parts[0], 10) || 1;
+    const end = parseInt(parts[1], 10) || (start + 1);
+    return { start, span: Math.max(1, end - start) };
+  }
+  const single = parseInt(parts[0], 10) || 1;
+  return { start: single, span: 1 };
+}
+
+// ---------- แปลง {start, span} กลับเป็น grid span string ----------
+function formatGridSpan(start, span) {
+  return `${start} / ${start + span}`;
+}
+
+// ---------- หาจำนวนคอลัมน์ทั้งหมดของแท็บ (จาก grid.columns เช่น "repeat(4, 1fr)") ----------
+function getColumnCount(tab) {
+  const match = tab.grid.columns.match(/repeat\((\d+)/);
+  return match ? parseInt(match[1], 10) : 1;
+}
+
+// ---------- ปรับความกว้าง (จำนวนคอลัมน์) ของกล่อง ----------
+function resizeBoxWidth(tabId, boxId, delta) {
+  const tab = appState.tabs.find(t => t.id === tabId);
+  if (!tab) return;
+  const box = tab.boxes.find(b => b.id === boxId);
+  if (!box) return;
+
+  const totalCols = getColumnCount(tab);
+  const { start, span } = parseGridSpan(box.col);
+  const newSpan = Math.min(totalCols, Math.max(1, span + delta));
+
+  box.col = formatGridSpan(start, newSpan);
+  renderActiveTab();
+}
+
+// ---------- ปรับความสูง (จำนวนแถว) ของกล่อง ----------
+function resizeBoxHeight(tabId, boxId, delta) {
+  const tab = appState.tabs.find(t => t.id === tabId);
+  if (!tab) return;
+  const box = tab.boxes.find(b => b.id === boxId);
+  if (!box) return;
+
+  const { start, span } = parseGridSpan(box.row);
+  const newSpan = Math.max(1, span + delta);
+
+  box.row = formatGridSpan(start, newSpan);
+  renderActiveTab();
+}
+
 // ---------- สร้างแท็บแรกจากเทมเพลตที่เลือก ----------
 function createTabFromTemplate(template, tabName) {
   const boxes = template.boxes.map(b => ({
@@ -262,6 +315,8 @@ function renderBoxElement(tab, box) {
   controls.appendChild(removeBoxBtn);
   boxEl.appendChild(controls);
 
+  boxEl.appendChild(renderResizeControls(tab, box));
+
   if (box.type !== "stat") {
     boxEl.appendChild(renderColorPickerRow(tab, box));
   }
@@ -349,6 +404,54 @@ function removeBoxFromTab(tabId, boxId) {
   if (!tab) return;
   tab.boxes = tab.boxes.filter(b => b.id !== boxId);
   renderActiveTab();
+}
+
+// ---------- สร้างแถวปุ่มปรับขนาดกว้าง/สูงของกล่อง ----------
+function renderResizeControls(tab, box) {
+  const row = document.createElement("div");
+  row.className = "box-resize-row";
+
+  const widthGroup = document.createElement("div");
+  widthGroup.className = "resize-group";
+  const widthLabel = document.createElement("span");
+  widthLabel.className = "resize-label";
+  widthLabel.textContent = "กว้าง";
+  const widthMinusBtn = document.createElement("button");
+  widthMinusBtn.className = "resize-btn";
+  widthMinusBtn.textContent = "−";
+  widthMinusBtn.title = "ลดความกว้าง";
+  widthMinusBtn.addEventListener("click", () => resizeBoxWidth(tab.id, box.id, -1));
+  const widthPlusBtn = document.createElement("button");
+  widthPlusBtn.className = "resize-btn";
+  widthPlusBtn.textContent = "+";
+  widthPlusBtn.title = "เพิ่มความกว้าง";
+  widthPlusBtn.addEventListener("click", () => resizeBoxWidth(tab.id, box.id, 1));
+  widthGroup.appendChild(widthLabel);
+  widthGroup.appendChild(widthMinusBtn);
+  widthGroup.appendChild(widthPlusBtn);
+
+  const heightGroup = document.createElement("div");
+  heightGroup.className = "resize-group";
+  const heightLabel = document.createElement("span");
+  heightLabel.className = "resize-label";
+  heightLabel.textContent = "สูง";
+  const heightMinusBtn = document.createElement("button");
+  heightMinusBtn.className = "resize-btn";
+  heightMinusBtn.textContent = "−";
+  heightMinusBtn.title = "ลดความสูง";
+  heightMinusBtn.addEventListener("click", () => resizeBoxHeight(tab.id, box.id, -1));
+  const heightPlusBtn = document.createElement("button");
+  heightPlusBtn.className = "resize-btn";
+  heightPlusBtn.textContent = "+";
+  heightPlusBtn.title = "เพิ่มความสูง";
+  heightPlusBtn.addEventListener("click", () => resizeBoxHeight(tab.id, box.id, 1));
+  heightGroup.appendChild(heightLabel);
+  heightGroup.appendChild(heightMinusBtn);
+  heightGroup.appendChild(heightPlusBtn);
+
+  row.appendChild(widthGroup);
+  row.appendChild(heightGroup);
+  return row;
 }
 
 // ---------- สร้างแถว color picker สำหรับกล่องกราฟ (bar/line: สีเดียว, pie: หลายสีตามจำนวนหมวด) ----------
@@ -479,6 +582,10 @@ if (typeof window !== "undefined") {
     addBoxToTab,
     removeBoxFromTab,
     renderTabBar,
-    renderActiveTab
+    renderActiveTab,
+    resizeBoxWidth,
+    resizeBoxHeight,
+    parseGridSpan,
+    getColumnCount
   };
 }
