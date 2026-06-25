@@ -470,6 +470,80 @@ body {
   cursor: not-allowed;
 }
 
+/* ===== Mode tabs (อัปโหลดไฟล์ / วางลิงก์) ===== */
+.import-mode-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.import-mode-tab {
+  flex: 1;
+  padding: 10px;
+  font-size: 13px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.import-mode-tab.active {
+  color: var(--color-accent-text);
+  border-bottom-color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* ===== Link input ===== */
+.import-link-row {
+  display: flex;
+  gap: 8px;
+}
+
+.import-link-input {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.import-link-submit-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: white;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.import-link-help {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.import-link-help summary {
+  cursor: pointer;
+  color: var(--color-accent-text);
+}
+
+.import-link-help-steps {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.import-loading {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  padding: 20px 0;
+}
+
 /* ===== Preview grid (เรนเดอร์เทมเพลตจริง) ===== */
 .preview-grid {
   display: grid;
