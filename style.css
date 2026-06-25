@@ -654,6 +654,7 @@ body {
   border-radius: var(--radius-md);
   padding: 14px;
   min-height: 90px;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -677,9 +678,19 @@ body {
   margin: 0;
 }
 
-.preview-box canvas {
+.chart-canvas-wrap {
+  position: relative;
   flex: 1;
-  max-height: 140px;
+  min-height: 0;
+  width: 100%;
+}
+
+.chart-canvas-wrap canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 @media (max-width: 720px) {
