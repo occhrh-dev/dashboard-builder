@@ -35,24 +35,21 @@ function closeImportModal() {
   document.getElementById("importModalOverlay").style.display = "none";
 }
 
-// ---------- แปลงลิงก์ Google Sheet ทั่วไป ให้เป็น URL export CSV ----------
+// ---------- แปลงลิงก์ Google Sheet ทั่วไป ให้เป็น URL export XLSX (ได้ทุกชีตในไฟล์เดียว) ----------
 // รองรับลิงก์รูปแบบ: https://docs.google.com/spreadsheets/d/{ID}/edit#gid=0
-function convertGoogleSheetUrlToCsv(inputUrl) {
+function convertGoogleSheetUrlToXlsx(inputUrl) {
   const match = inputUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   if (!match) return null;
 
   const sheetId = match[1];
-  const gidMatch = inputUrl.match(/[#&]gid=([0-9]+)/);
-  const gid = gidMatch ? gidMatch[1] : "0";
-
-  return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`;
 }
 
-// ---------- ดึงข้อมูลจากลิงก์ Google Sheet ----------
+// ---------- ดึงข้อมูลจากลิงก์ Google Sheet (โหลดทั้งไฟล์ ทุกชีต) ----------
 function handleLinkSubmit(inputUrl) {
-  const csvUrl = convertGoogleSheetUrlToCsv(inputUrl.trim());
+  const xlsxUrl = convertGoogleSheetUrlToXlsx(inputUrl.trim());
 
-  if (!csvUrl) {
+  if (!xlsxUrl) {
     showImportError("ลิงก์ไม่ถูกต้อง — กรุณาคัดลอกลิงก์จาก URL ของ Google Sheet ที่เปิดอยู่ในเบราว์เซอร์");
     return;
   }
@@ -60,15 +57,16 @@ function handleLinkSubmit(inputUrl) {
   importState.isLoading = true;
   renderImportModal();
 
-  fetch(csvUrl)
+  fetch(xlsxUrl)
     .then(response => {
       if (!response.ok) {
         throw new Error("fetch failed: " + response.status);
       }
-      return response.text();
+      return response.arrayBuffer();
     })
-    .then(csvText => {
-      const workbook = XLSX.read(csvText, { type: "string" });
+    .then(arrayBuffer => {
+      const data = new Uint8Array(arrayBuffer);
+      const workbook = XLSX.read(data, { type: "array" });
       importState.workbook = workbook;
       importState.sheetNames = workbook.SheetNames;
       importState.selectedSheet = workbook.SheetNames[0];
@@ -383,7 +381,7 @@ function renderLinkInputSection(body) {
     "มองหา \"การเข้าถึงทั่วไป\" (General access)",
     "เปลี่ยนจาก \"จำกัด\" เป็น \"ทุกคนที่มีลิงก์\"",
     "ตั้งสิทธิ์เป็น \"ผู้ดู\" (Viewer) แล้วกด \"เสร็จสิ้น\"",
-    "คัดลอกลิงก์จาก URL bar ของเบราว์เซอร์มาวางในช่องด้านบน"
+    "คัดลอกลิงก์จาก URL bar ของเบราว์เซอร์มาวางในช่องด้านบน (ถ้ามีหลายชีต ระบบจะให้เลือกชีตในขั้นถัดไป)"
   ].forEach(step => {
     const li = document.createElement("li");
     li.textContent = step;
@@ -556,7 +554,7 @@ if (typeof window !== "undefined") {
   window.handleFileSelected = handleFileSelected;
   window.handleSheetChange = handleSheetChange;
   window.confirmImport = confirmImport;
-  window.convertGoogleSheetUrlToCsv = convertGoogleSheetUrlToCsv;
+  window.convertGoogleSheetUrlToXlsx = convertGoogleSheetUrlToXlsx;
   window.handleLinkSubmit = handleLinkSubmit;
   window.switchImportMode = switchImportMode;
 }
