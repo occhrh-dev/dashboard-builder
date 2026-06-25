@@ -328,6 +328,148 @@ body {
   background: var(--color-accent-soft);
 }
 
+/* ===== ปุ่มนำเข้าข้อมูลในกล่อง ===== */
+.box-import-btn {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 12px;
+  padding: 6px 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.box-import-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+/* ===== Import modal ===== */
+.import-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.import-modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.import-modal-header h3 {
+  margin: 0 0 16px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.import-error {
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  margin: 0 0 16px;
+}
+
+.import-section {
+  margin-bottom: 18px;
+}
+
+.import-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.import-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: 6px;
+}
+
+.import-file-input {
+  font-size: 13px;
+  width: 100%;
+}
+
+.import-select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.import-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.import-preview-table th,
+.import-preview-table td {
+  border: 1px solid var(--color-border);
+  padding: 6px 8px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.import-preview-table th {
+  background: var(--color-bg);
+  font-weight: 600;
+}
+
+.import-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.import-cancel-btn {
+  padding: 9px 18px;
+  font-size: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.import-confirm-btn {
+  padding: 9px 18px;
+  font-size: 13px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.import-confirm-btn:disabled {
+  background: var(--color-border-strong);
+  cursor: not-allowed;
+}
+
 /* ===== Preview grid (เรนเดอร์เทมเพลตจริง) ===== */
 .preview-grid {
   display: grid;
