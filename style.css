@@ -209,6 +209,125 @@ body {
   margin: 80px 0;
 }
 
+/* ===== Tab bar ===== */
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.preview-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.preview-tab.active {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+  font-weight: 600;
+}
+
+.preview-tab-name {
+  white-space: nowrap;
+}
+
+.preview-tab-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-faint);
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.preview-tab-remove:hover {
+  color: var(--color-text);
+}
+
+.preview-tab-add {
+  background: none;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.preview-tab-add:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+/* ===== Box controls (dropdown ชนิดกราฟ + ปุ่มลบ) ===== */
+.box-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.box-type-select {
+  font-size: 11px;
+  padding: 3px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  flex: 1;
+  min-width: 0;
+}
+
+.box-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-faint);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.box-remove-btn:hover {
+  color: #dc2626;
+}
+
+/* ===== ปุ่มเพิ่มกล่อง ===== */
+.add-box-row {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.add-box-btn {
+  background: none;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: 10px 20px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  width: 100%;
+}
+
+.add-box-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+  background: var(--color-accent-soft);
+}
+
 /* ===== Preview grid (เรนเดอร์เทมเพลตจริง) ===== */
 .preview-grid {
   display: grid;
