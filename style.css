@@ -644,6 +644,7 @@ body {
 .preview-grid {
   display: grid;
   grid-auto-flow: row dense;
+  grid-auto-rows: 180px;
   gap: 12px;
 }
 
