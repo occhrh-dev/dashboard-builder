@@ -89,6 +89,46 @@ function resizeBoxHeight(tabId, boxId, delta) {
   renderActiveTab();
 }
 
+// ---------- จัดตำแหน่งแนวนอนของกล่อง (ซ้าย/กลาง/ขวา) โดยคงความกว้างเดิมไว้ ----------
+// ปล่อยให้ grid-auto-flow: dense จัดเรียงกล่องอื่นรอบๆ ให้เองหลังจากนี้
+function alignBoxHorizontal(tabId, boxId, alignment) {
+  const tab = appState.tabs.find(t => t.id === tabId);
+  if (!tab) return;
+  const box = tab.boxes.find(b => b.id === boxId);
+  if (!box) return;
+
+  const totalCols = getColumnCount(tab);
+  const { span } = parseGridSpan(box.col);
+
+  let newStart;
+  if (alignment === "left") {
+    newStart = 1;
+  } else if (alignment === "right") {
+    newStart = Math.max(1, totalCols - span + 1);
+  } else {
+    // กึ่งกลาง: เผื่อเศษไว้ฝั่งซ้าย ปัดลงให้เป็นจำนวนเต็มคอลัมน์
+    newStart = Math.max(1, Math.floor((totalCols - span) / 2) + 1);
+  }
+
+  box.col = formatGridSpan(newStart, span);
+  renderActiveTab();
+}
+
+// ---------- ย้ายลำดับกล่องขึ้น/ลงใน array (มีผลต่อลำดับการไหลเข้า grid เมื่อใช้ dense) ----------
+function moveBoxOrder(tabId, boxId, direction) {
+  const tab = appState.tabs.find(t => t.id === tabId);
+  if (!tab) return;
+  const idx = tab.boxes.findIndex(b => b.id === boxId);
+  if (idx === -1) return;
+
+  const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+  if (targetIdx < 0 || targetIdx >= tab.boxes.length) return;
+
+  const [box] = tab.boxes.splice(idx, 1);
+  tab.boxes.splice(targetIdx, 0, box);
+  renderActiveTab();
+}
+
 // ---------- สร้างแท็บแรกจากเทมเพลตที่เลือก ----------
 function createTabFromTemplate(template, tabName) {
   const boxes = template.boxes.map(b => ({
@@ -274,11 +314,15 @@ function renderActiveTab() {
   addBoxRow.appendChild(addBoxBtn);
   canvas.appendChild(addBoxRow);
 
-  // วาดกราฟ (ต้องทำหลังแปะ canvas เข้า DOM แล้ว)
-  tab.boxes.forEach(box => {
-    if (box.type === "bar" || box.type === "line" || box.type === "pie") {
-      drawChartForBox(box);
-    }
+  // วาดกราฟ (ต้องทำหลังแปะ canvas เข้า DOM แล้ว และหลัง browser layout เสร็จสมบูรณ์
+  // ใช้ requestAnimationFrame เพื่อรอให้ wrapper คำนวณความสูงจริงก่อน ไม่งั้น Chart.js
+  // จะอ่านขนาด container เป็น 0 ตอนสร้างกราฟครั้งแรก แล้วไม่วาดอะไรเลยจนกว่าจะมี resize event มา trigger ใหม่)
+  requestAnimationFrame(() => {
+    tab.boxes.forEach(box => {
+      if (box.type === "bar" || box.type === "line" || box.type === "pie") {
+        drawChartForBox(box);
+      }
+    });
   });
 }
 
@@ -317,6 +361,7 @@ function renderBoxElement(tab, box) {
   boxEl.appendChild(controls);
 
   boxEl.appendChild(renderResizeControls(tab, box));
+  boxEl.appendChild(renderAlignControls(tab, box));
 
   if (box.type !== "stat") {
     boxEl.appendChild(renderColorPickerRow(tab, box));
@@ -458,6 +503,58 @@ function renderResizeControls(tab, box) {
   return row;
 }
 
+// ---------- สร้างแถวปุ่มจัดตำแหน่งกล่อง (ซ้าย/กลาง/ขวา, ขึ้น/ลง) ----------
+function renderAlignControls(tab, box) {
+  const row = document.createElement("div");
+  row.className = "box-align-row";
+
+  const hGroup = document.createElement("div");
+  hGroup.className = "align-group";
+  const hLabel = document.createElement("span");
+  hLabel.className = "resize-label";
+  hLabel.textContent = "ตำแหน่ง";
+  hGroup.appendChild(hLabel);
+
+  [
+    { key: "left", title: "ชิดซ้าย", icon: "⇤" },
+    { key: "center", title: "กึ่งกลาง", icon: "⇔" },
+    { key: "right", title: "ชิดขวา", icon: "⇥" }
+  ].forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "align-btn";
+    btn.textContent = opt.icon;
+    btn.title = opt.title;
+    btn.addEventListener("click", () => alignBoxHorizontal(tab.id, box.id, opt.key));
+    hGroup.appendChild(btn);
+  });
+
+  const vGroup = document.createElement("div");
+  vGroup.className = "align-group";
+  const vLabel = document.createElement("span");
+  vLabel.className = "resize-label";
+  vLabel.textContent = "ลำดับ";
+  vGroup.appendChild(vLabel);
+
+  const upBtn = document.createElement("button");
+  upBtn.className = "align-btn";
+  upBtn.textContent = "↑";
+  upBtn.title = "ย้ายขึ้น (แสดงก่อน)";
+  upBtn.addEventListener("click", () => moveBoxOrder(tab.id, box.id, "up"));
+
+  const downBtn = document.createElement("button");
+  downBtn.className = "align-btn";
+  downBtn.textContent = "↓";
+  downBtn.title = "ย้ายลง (แสดงหลัง)";
+  downBtn.addEventListener("click", () => moveBoxOrder(tab.id, box.id, "down"));
+
+  vGroup.appendChild(upBtn);
+  vGroup.appendChild(downBtn);
+
+  row.appendChild(hGroup);
+  row.appendChild(vGroup);
+  return row;
+}
+
 // ---------- สร้างแถว color picker สำหรับกล่องกราฟ (bar/line: สีเดียว, pie: หลายสีตามจำนวนหมวด) ----------
 function renderColorPickerRow(tab, box) {
   const row = document.createElement("div");
@@ -589,6 +686,8 @@ if (typeof window !== "undefined") {
     renderActiveTab,
     resizeBoxWidth,
     resizeBoxHeight,
+    alignBoxHorizontal,
+    moveBoxOrder,
     parseGridSpan,
     getColumnCount
   };
