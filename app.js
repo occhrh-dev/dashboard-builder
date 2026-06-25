@@ -250,6 +250,12 @@ function renderBoxElement(tab, box) {
   controls.appendChild(removeBoxBtn);
   boxEl.appendChild(controls);
 
+  const importBtn = document.createElement("button");
+  importBtn.className = "box-import-btn";
+  importBtn.textContent = box.sourceInfo ? "เปลี่ยนข้อมูล" : "นำเข้าข้อมูล";
+  importBtn.addEventListener("click", () => openImportModal(tab.id, box.id));
+  boxEl.appendChild(importBtn);
+
   if (box.type === "stat") {
     const body = document.createElement("div");
     body.innerHTML = `
