@@ -27,9 +27,14 @@ const CHART_TYPE_OPTIONS = [
   { value: "pie", label: "กราฟวงกลม" }
 ];
 
-// สีเริ่มต้นของกราฟ (โทนราชการ: เขียวอมฟ้า, เหลืองดาวเรือง, ส้มแดง, ฟ้าอ่อน, ...)
-const DEFAULT_CHART_COLOR = "#0E7C7B";
-const DEFAULT_PIE_COLORS = ["#0E7C7B", "#F2A93B", "#E85D4E", "#7FC6D9", "#B07BAC"];
+// สีเริ่มต้นของกราฟ (โทนราชการ: เขียวอมฟ้า, เหลืองดาวเรือง, ส้มแดง, ฟ้าอ่อน, ม่วงอ่อน)
+// ใช้เป็น array เดียวกันทุกชนิดกราฟ (bar/line/pie) — แต่ละหมวดหมู่มีสีของตัวเองเสมอ
+const DEFAULT_CHART_PALETTE = ["#0E7C7B", "#F2A93B", "#E85D4E", "#7FC6D9", "#B07BAC", "#5A8F3C", "#D4628F"];
+
+// คืนสีตามตำแหน่ง idx โดยไล่วนซ้ำ palette ถ้าหมวดหมู่มากกว่าจำนวนสีที่มี
+function colorAt(idx) {
+  return DEFAULT_CHART_PALETTE[idx % DEFAULT_CHART_PALETTE.length];
+}
 
 // ---------- สร้างแท็บแรกจากเทมเพลตที่เลือก ----------
 function createTabFromTemplate(template, tabName) {
@@ -43,7 +48,9 @@ function createTabFromTemplate(template, tabName) {
     unit: b.unit,
     labels: b.labels,
     data: b.data,
-    color: b.type === "pie" ? DEFAULT_PIE_COLORS.slice() : (b.type !== "stat" ? DEFAULT_CHART_COLOR : undefined)
+    color: b.type !== "stat" && b.labels
+      ? b.labels.map((_, idx) => colorAt(idx))
+      : undefined
   }));
 
   return {
@@ -303,9 +310,14 @@ function changeBoxType(tabId, boxId, newType) {
     box.value = "0";
     box.unit = "";
   }
-  // ตั้งสีเริ่มต้นให้กราฟ ถ้ายังไม่มีการตั้งสีมาก่อน
-  if (newType !== "stat" && !box.color) {
-    box.color = newType === "pie" ? DEFAULT_PIE_COLORS.slice() : DEFAULT_CHART_COLOR;
+  // ตั้งสีเริ่มต้นให้กราฟตามจำนวนหมวดหมู่ (ทุกชนิดกราฟใช้ array สีเหมือนกัน)
+  if (newType !== "stat") {
+    const labelCount = (box.labels || []).length;
+    if (!Array.isArray(box.color) || box.color.length < labelCount) {
+      box.color = (box.labels || []).map((_, idx) =>
+        (Array.isArray(box.color) && box.color[idx]) ? box.color[idx] : colorAt(idx)
+      );
+    }
   }
 
   renderActiveTab();
@@ -344,55 +356,31 @@ function renderColorPickerRow(tab, box) {
   const row = document.createElement("div");
   row.className = "box-color-row";
 
-  if (box.type === "pie") {
-    const labels = box.labels || [];
-    // ให้แน่ใจว่า color array มีจำนวนพอกับ labels เสมอ (เผื่อข้อมูลใหม่มีหมวดมากกว่าเดิม)
-    if (!Array.isArray(box.color)) box.color = DEFAULT_PIE_COLORS.slice();
-    while (box.color.length < labels.length) {
-      box.color.push(DEFAULT_PIE_COLORS[box.color.length % DEFAULT_PIE_COLORS.length]);
-    }
+  const labels = box.labels || [];
 
-    labels.forEach((label, idx) => {
-      const swatchWrap = document.createElement("label");
-      swatchWrap.className = "color-swatch-wrap";
-      swatchWrap.title = label;
+  // ให้แน่ใจว่า color array มีจำนวนพอกับ labels เสมอ (เผื่อข้อมูลใหม่มีหมวดมากกว่าเดิม)
+  if (!Array.isArray(box.color)) box.color = [];
+  while (box.color.length < labels.length) {
+    box.color.push(colorAt(box.color.length));
+  }
 
-      const swatchInput = document.createElement("input");
-      swatchInput.type = "color";
-      swatchInput.className = "color-swatch-input";
-      swatchInput.value = box.color[idx] || DEFAULT_PIE_COLORS[idx % DEFAULT_PIE_COLORS.length];
-      swatchInput.addEventListener("input", (e) => {
-        box.color[idx] = e.target.value;
-        redrawSingleChart(box);
-      });
-
-      swatchWrap.appendChild(swatchInput);
-      row.appendChild(swatchWrap);
-    });
-  } else {
-    if (!box.color || Array.isArray(box.color)) box.color = DEFAULT_CHART_COLOR;
-
+  labels.forEach((label, idx) => {
     const swatchWrap = document.createElement("label");
     swatchWrap.className = "color-swatch-wrap";
-    swatchWrap.title = "เลือกสีกราฟ";
+    swatchWrap.title = label;
 
     const swatchInput = document.createElement("input");
     swatchInput.type = "color";
     swatchInput.className = "color-swatch-input";
-    swatchInput.value = box.color;
+    swatchInput.value = box.color[idx] || colorAt(idx);
     swatchInput.addEventListener("input", (e) => {
-      box.color = e.target.value;
+      box.color[idx] = e.target.value;
       redrawSingleChart(box);
     });
 
-    const swatchLabel = document.createElement("span");
-    swatchLabel.className = "color-swatch-label";
-    swatchLabel.textContent = "สีกราฟ";
-
     swatchWrap.appendChild(swatchInput);
     row.appendChild(swatchWrap);
-    row.appendChild(swatchLabel);
-  }
+  });
 
   return row;
 }
@@ -412,23 +400,50 @@ function drawChartForBox(box) {
   const ctx = document.getElementById("chart-" + box.id);
   if (!ctx) return;
 
-  const mainColor = box.type === "pie"
-    ? (Array.isArray(box.color) ? box.color : DEFAULT_PIE_COLORS)
-    : (typeof box.color === "string" ? box.color : DEFAULT_CHART_COLOR);
+  // ทุกชนิดกราฟใช้ array สีตามจำนวนหมวดหมู่เสมอ (ความยาวควรเท่ากับ box.labels)
+  const colorArray = Array.isArray(box.color) && box.color.length > 0
+    ? box.color
+    : (box.labels || []).map((_, idx) => colorAt(idx));
+
+  let datasetConfig;
+
+  if (box.type === "line") {
+    // เส้นเชื่อมใช้สีกลางๆ (สีแรกในชุด) ส่วนจุดข้อมูลแต่ละจุดมีสีของตัวเองตามที่เลือก
+    datasetConfig = {
+      data: box.data,
+      borderColor: colorArray[0] || DEFAULT_CHART_PALETTE[0],
+      backgroundColor: colorArray,
+      pointBackgroundColor: colorArray,
+      pointBorderColor: colorArray,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      borderWidth: 2,
+      tension: 0.3,
+      fill: false
+    };
+  } else if (box.type === "bar") {
+    datasetConfig = {
+      data: box.data,
+      backgroundColor: colorArray,
+      borderColor: colorArray,
+      borderWidth: 0,
+      borderRadius: 4
+    };
+  } else {
+    // pie
+    datasetConfig = {
+      data: box.data,
+      backgroundColor: colorArray,
+      borderColor: "#ffffff",
+      borderWidth: 2
+    };
+  }
 
   const chart = new Chart(ctx, {
     type: box.type,
     data: {
       labels: box.labels,
-      datasets: [{
-        data: box.data,
-        backgroundColor: mainColor,
-        borderColor: box.type === "pie" ? "#ffffff" : mainColor,
-        borderWidth: box.type === "line" ? 2 : (box.type === "pie" ? 2 : 0),
-        borderRadius: box.type === "bar" ? 4 : 0,
-        tension: 0.3,
-        fill: box.type === "line" ? false : true
-      }]
+      datasets: [datasetConfig]
     },
     options: {
       responsive: true,
