@@ -80,8 +80,21 @@
 
 </div>
 
+<!-- ===== Import Modal: เลือกไฟล์ -> ชีต -> คอลัมน์ ===== -->
+<div class="import-modal-overlay" id="importModalOverlay" style="display:none;">
+  <div class="import-modal">
+    <div class="import-modal-header">
+      <h3>นำเข้าข้อมูล</h3>
+    </div>
+    <p class="import-error" id="importError" style="display:none;"></p>
+    <div class="import-modal-body" id="importModalBody"></div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="templates.js"></script>
+<script src="data-import.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
