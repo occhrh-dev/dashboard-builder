@@ -255,7 +255,8 @@ function renderActiveTab() {
   const gridEl = document.createElement("div");
   gridEl.className = "preview-grid";
   gridEl.style.gridTemplateColumns = tab.grid.columns;
-  gridEl.style.gridTemplateRows = tab.grid.rows;
+  // ไม่ตั้ง gridTemplateRows ตรงๆ เพราะต้องให้ grid-auto-rows ใน CSS เป็นตัวกำหนดความสูงพื้นฐาน
+  // (ถ้าตั้ง "auto" ตรงๆ จะทำให้ลูกที่ใช้ height:100% คำนวณค่าเป็น 0 ไม่แสดงผล)
 
   tab.boxes.forEach(box => {
     gridEl.appendChild(renderBoxElement(tab, box));
