@@ -442,6 +442,41 @@ body {
   background: var(--color-accent-soft);
 }
 
+/* ===== ปุ่มจัดตำแหน่งกล่อง (ซ้าย/กลาง/ขวา, ขึ้น/ลง) ===== */
+.box-align-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.align-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.align-btn {
+  width: 22px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.align-btn:hover {
+  border-color: var(--color-marigold);
+  color: #b9791f;
+  background: var(--color-marigold-soft);
+}
+
 /* ===== Import modal ===== */
 .import-modal-overlay {
   position: fixed;
