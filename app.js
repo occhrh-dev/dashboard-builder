@@ -338,10 +338,13 @@ function renderBoxElement(tab, box) {
     const labelEl = document.createElement("p");
     labelEl.className = "preview-box-label";
     labelEl.textContent = box.label;
+    const canvasWrap = document.createElement("div");
+    canvasWrap.className = "chart-canvas-wrap";
     const canvasEl = document.createElement("canvas");
     canvasEl.id = "chart-" + box.id;
+    canvasWrap.appendChild(canvasEl);
     boxEl.appendChild(labelEl);
-    boxEl.appendChild(canvasEl);
+    boxEl.appendChild(canvasWrap);
   }
 
   return boxEl;
