@@ -11,7 +11,8 @@ const importState = {
   selectedSheet: null,
   columns: [],            // ชื่อคอลัมน์จากหัวตาราง (แถวแรก)
   rows: [],               // ข้อมูลทั้งหมดของชีตที่เลือก (array of objects)
-  isLoading: false
+  isLoading: false,
+  resolvedXlsxUrl: null   // URL export xlsx ที่แปลงแล้ว ถ้านำเข้าจากลิงก์ Google Sheet (เก็บไว้ใช้ตอน export เพื่อดึงข้อมูลสดซ้ำได้)
 };
 
 // ---------- เปิด modal นำเข้าข้อมูลสำหรับกล่องใดกล่องหนึ่ง ----------
@@ -25,6 +26,7 @@ function openImportModal(tabId, boxId) {
   importState.columns = [];
   importState.rows = [];
   importState.isLoading = false;
+  importState.resolvedXlsxUrl = null;
 
   renderImportModal();
   document.getElementById("importModalOverlay").style.display = "flex";
@@ -71,6 +73,7 @@ function handleLinkSubmit(inputUrl) {
       importState.sheetNames = workbook.SheetNames;
       importState.selectedSheet = workbook.SheetNames[0];
       importState.isLoading = false;
+      importState.resolvedXlsxUrl = xlsxUrl;
       loadSheetData(importState.selectedSheet);
       renderImportModal();
     })
@@ -517,6 +520,15 @@ function confirmImport() {
   const box = tab.boxes.find(b => b.id === importState.targetBoxId);
   if (!box) return;
 
+  // เก็บข้อมูลแหล่งที่มา ถ้านำเข้าจากลิงก์ Google Sheet จะใช้ดึงข้อมูลสดซ้ำได้ตอน export
+  if (importState.mode === "link" && importState.resolvedXlsxUrl) {
+    box.sheetUrl = importState.resolvedXlsxUrl;
+    box.sheetName = importState.selectedSheet;
+  } else {
+    box.sheetUrl = null;
+    box.sheetName = null;
+  }
+
   if (box.type === "stat") {
     const column = document.getElementById("statColumnSelect").value;
     const method = document.getElementById("statMethodSelect").value;
@@ -525,6 +537,7 @@ function confirmImport() {
     box.value = formatStatValue(result, method);
     box.unit = "";
     box.sourceInfo = { column, method };
+    box.aggMethod = method;
   } else {
     const labelColumn = document.getElementById("chartLabelSelect").value;
     const valueColumn = document.getElementById("chartValueSelect").value;
@@ -533,6 +546,7 @@ function confirmImport() {
     box.labels = chartData.labels;
     box.data = chartData.data;
     box.sourceInfo = { labelColumn, valueColumn };
+    box.aggMethod = null;
   }
 
   closeImportModal();
